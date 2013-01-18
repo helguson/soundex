@@ -1,5 +1,6 @@
 /**
-implementation of soundex algorithm
+implementation of Soundex algorithm<br/>
+using a lookup table to acces group for a given character
 
 @author TH
 @since 2013_01_10
@@ -8,18 +9,26 @@ public class SoundexEncoder{
 	//#################
 	//### constants ###
 	//#################
+	private static final int	GROUPTABLE_NOGROUP_ID			= -1;
+	
+	//standard values
 	public static final char	STANDARD_GROUPCODE_GROUPDELIMETER	= '/';
 	public static final String	STANDARD_SOUNDEX_GROUPCODE		= "1BFPV/2CGJKQSXZ/3DT/4L/5MN/6R";
-	public static final boolean	STANDARD_COLLAPSEDOUBLINGS_SETTING	= true;
-	public static final int		STANDARD_RESULT_LENGTH			= 4;
 	
-	private static final int	GROUPTABLE_NOGROUP_ID			= -1;
+	public static final boolean	STANDARD_COLLAPSEDOUBLINGS_SETTING	= true;
+
+	public static final boolean	STANDARD_ENFORCELENGTH_SETTING		= true;
+	public static final int		STANDARD_RESULT_LENGTH			= 4;
+	public static final char	STANDARD_NOGROUP_SYMBOL			= '0';
+	
+	
+
 	//##################
 	//### attributes ###
 	//##################
 	/**
-	lookup table for characters with value from <code>groupTableFirstElementCode</code> to <code>groupTableFirstElementCode + groupTable.length</code>
-	-1 for no group
+	lookup table for characters with value from <code>groupTableFirstElementCode</code> to <code>groupTableFirstElementCode + groupTable.length</code><br/>
+	-1 for no group<br/>
 	n for group n
 	*/
 	private int[] groupTable;
@@ -31,12 +40,25 @@ public class SoundexEncoder{
 	lookup table for groups to compose soundex code
 	*/
 	private String[] groupSymbolTable;
+	
 	/**
 	whether sequential doublings in sequence of group symbols are collapsed<br/>
 	example: "A112223444" -> "A1234"
 	*/
-	private boolean collapseDoublings;
+	public boolean collapseDoublings;
 	
+	/**
+	whether result of {@link #getSoundexCode getSoundexCode} is lengtened by appending {@link #nogroupSymbol} or shortened until it has a length of {@link #resultLength}
+	*/
+	public boolean enforceLength;
+	/**
+	will be appended to lengthen the result of {@link #getSoundexCode getSoundexCode} if {@link #enforceLength} is set to <code>true</code>
+	*/
+	public char nogroupSymbol;
+	/**
+	desired length for result of {@link #getSoundexCode getSoundexCode}
+	*/
+	public int resultLength;
 	
 	
 	
@@ -46,7 +68,7 @@ public class SoundexEncoder{
 	
 	//constructors
 	/**
-	creates SoundexEncoder object with standard SoundexEncoding
+	creates SoundexEncoder object with standard Soundex encoding
 	@see #STANDARD_SOUNDEX_GROUPCODE
 	@see #setGroups(String,char)
 	*/
@@ -56,8 +78,7 @@ public class SoundexEncoder{
 	
 	/**
 	creates SoundexEncoder object with custom groupcode 
-	and STANDARD_GROUPCODE_GROUPDELIMETER
-	@see #STANDARD_GROUPCODE_GROUPDELIMETER
+	and {@link #STANDARD_GROUPCODE_GROUPDELIMETER}
 	@see #setGroups(String,char)
 	*/
 	public SoundexEncoder(String groupcode){
@@ -72,25 +93,14 @@ public class SoundexEncoder{
 	public SoundexEncoder(String groupcode, char groupDelimiter){
 		this.setGroups(groupcode, groupDelimiter);
 		
-		this.collapseDoublings = STANDARD_COLLAPSEDOUBLINGS_SETTING;
+		this.collapseDoublings	= STANDARD_COLLAPSEDOUBLINGS_SETTING;
+		
+		this.enforceLength 	= STANDARD_ENFORCELENGTH_SETTING;
+		this.nogroupSymbol	= STANDARD_NOGROUP_SYMBOL;
+		this.resultLength	= STANDARD_RESULT_LENGTH;
 	}
 	
 	//getters & setters
-	/**
-	@return whether sequential doublings in sequence of group symbols are collapsed<br/>
-	example: "A112223444" -> "A1234"
-	*/
-	public boolean getCollapseDoublings(){
-		return this.collapseDoublings;
-	}
-	/**
-	sets whether sequential doublings in sequence of group symbols are collapsed<br/>
-	example: "A112223444" -> "A1234"
-	*/
-	public void setCollapseDoublings(boolean value){
-		this.collapseDoublings = value;
-	}
-	
 	/**
 	sets groups by decoding the parameter <code>groupcode</code>
 	@param groupcode see {@link #setGroups(String, char) setGroups} for specification
@@ -174,14 +184,15 @@ public class SoundexEncoder{
 	}
 	
 	/**
-	determines sequence of group symbol using the groupcode
+	determines sequence of group symbols using the {@link #groupSymbolTable lookup table}
 	*/
 	private String getGroupSymbolSequence(String word){
 		String result = "";
 		int group;
 		int previousWrittenGroup = GROUPTABLE_NOGROUP_ID;
 		
-		for(int i = 0; i < word.length(); i++){
+		//encode sequence
+		for(int i = 0; (i < word.length()) && (!this.enforceLength || result.length() <= this.resultLength - 1); i++){	//hint 1 for 'resultLength - 1': transfer of the first letter, see #getSoundexCode
 			
 			group = this.getGroup(word.charAt(i));
 			
@@ -193,11 +204,16 @@ public class SoundexEncoder{
 			
 		}
 		
+		//lengthen if needed
+		while (this.enforceLength && result.length() < this.resultLength - 1){						//see hint 1
+			result += this.nogroupSymbol;
+		}
+		
 		return result;
 	}
 	
 	/**
-	@return <code>groupSymbolTable</code> index for given character
+	@return {@link groupSymbolTable} index for given character
 	*/
 	private int getGroup(char c){
 		int result = GROUPTABLE_NOGROUP_ID;
@@ -211,15 +227,26 @@ public class SoundexEncoder{
 		return result;
 	}
 
+	
+	
 	//######################
 	//### static methods ###
 	//######################
-	
+	/**
+	interactive test method<br/>
+	starts loop:<br/>
+	1. asks for input<br/>
+	2. prints encoding of input with standard settings<br/>
+	<b>quit loop with input "Q"</b>
+	*/
 	public static void main(String[] args){
 		java.util.Scanner sc = new java.util.Scanner(System.in);
 		SoundexEncoder encoder = new SoundexEncoder();
 		
 		String input = "";
+		
+		System.out.println("starting loop to encode input");
+		System.out.println("enter 'Q' to cancel");
 		
 		while(!input.equals("Q")){
 			input = sc.next().toUpperCase();
