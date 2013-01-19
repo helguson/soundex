@@ -1,6 +1,11 @@
 /**
-implementation of Soundex algorithm<br/>
-using a lookup table to acces group for a given character
+<pre>implementation of Soundex 'algorithm'
+using a lookup table to access group for a given character
+
+features:
+	- standard or {@link #setGroups(String,char) custom groups and symbols}
+	- optional {@link #collapseDoublings collapsing of sequential group symbol doublings}
+	- optional {@link #enforceLength fixed length of results}</pre>
 
 @author TH
 @since 2013_01_10
@@ -42,7 +47,7 @@ public class SoundexEncoder{
 	private String[] groupSymbolTable;
 	
 	/**
-	whether sequential doublings in sequence of group symbols are collapsed<br/>
+	whether sequential doublings in sequence of group symbols will be collapsed<br/>
 	example: "A112223444" -> "A1234"
 	*/
 	public boolean collapseDoublings;
@@ -112,23 +117,22 @@ public class SoundexEncoder{
 	/**
 	sets groups by decoding the parameter <code>groupcode</code><br/>
 	@param groupcode rough specification of <code>groupcode</code>:<br/>
-	<ul>
-	<li>U ~ set of all Unicode characters</li>
-	<li>U* ~ Kleene star of U</li>
-	<li>let A,B element of U* <br/>
-		then AB is concatenation of A and B</li>
-	<li>
-	let S element of U ~ symbol for group<br/>
-	let E1, E2, ... , En for n >= 1 elements of U ~ elements of group<br/>
-	then SE1E2..En is a group
-	</li>
-	<li>
-	let G1, G2, ... , Gm for m >= 1 are groups<br/>
-	let | element of U ~ group delimeter<br/>
-	then G1|G2| ... |Gm is a groupcode<br/>
-	(and G1, G2, ... , Gm are groupcodes)
-	</li>
-	<ul/>
+	<pre>
+	assumptions:
+	- U 							// set of all Unicode characters
+	- U* 							// Kleene star of U
+	- AB							// concatenation of A and B
+	
+	definitions:
+	- let S element of U 					// <b>symbol for group</b>
+	  let E1, E2, ... , En for n >= 1 elements of U 	// <b>elements of group</b>
+	  then SE1E2..En is a <b>group</b>
+	- let G1, G2, ... , Gm for m >= 1 are groups
+	  let | element of U 					// <b>group delimeter</b>
+	  then G1|G2| ... |Gm is a <b>groupcode</b>
+	  (and G1, G2, ... , Gm are groupcodes, too)
+	</pre>
+	
 	*/
 	public void setGroups(String groupcode, char groupDelimiter){
 		

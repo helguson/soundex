@@ -1,0 +1,11 @@
+#"don't ignore" list
+
+#ignore everything ...
+*
+
+#except ...
+!*.java
+!*.txt
+
+#and
+!.gitignore
